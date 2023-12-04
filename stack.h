@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <functional>
 #include <stdexcept>
 
@@ -14,8 +13,10 @@ class Stack {
         }
 
     public:
-        Stack(int *begin, const int *end): begin_ { begin }, top_ { begin }, end_ { end } {
-            assert(begin && begin <= end);
+        Stack(int *begin, const int *end):
+            begin_ { begin }, top_ { begin }, end_ { end }
+        {
+            if (! begin) { throw std::range_error { "no stack space" }; }
         }
 
         [[nodiscard]] bool full() const { return top_ >= end_; }
@@ -34,14 +35,19 @@ class Stack {
 
         int &operator[](int idx);
 
+        // ReSharper disable once CppMemberFunctionMayBeConst
         void operator()(const std::function<int(int)>& fn) {
             assert_not_empty();
+            // ReSharper disable CppDFAArrayIndexOutOfBounds
             top_[-1] = fn(top_[-1]);
+            // ReSharper restore CppDFAArrayIndexOutOfBounds
         }
 
         void operator()(const std::function<int(int, int)>& fn) {
-            if (top_ - begin_ < 2) { throw std::range_error { "not two arguments for binary" }; }
-            int first { *--top_ };
+            if (top_ - begin_ < 2) {
+                throw std::range_error { "not two arguments for binary" };
+            }
+            const int first { *--top_ };
             top_[-1] = fn(first, top_[-1]);
         }
 
